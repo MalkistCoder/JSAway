@@ -4,12 +4,8 @@
     "e": ["3"],
     "h": ["#"],
     "i": ["1", "!"],
-    "l": ["7", "1"],
+    "l": ["1", "7"],
     "o": ["0"],
     "s": ["5", "\\$"],
-    "t": ["\\+"],
-    "NOTES FOR ADDING NEW REPLACECHARS": {
-        "Make sure to escape the following characters:": "+*?^$\\.[]{}()|/",
-        "Put them in a list, such as": ["M", "C", "8", "2"]
-    }
+    "t": ["7", "\\+"]
 }
