@@ -1,7 +1,7 @@
-import defaultProfanities from './profanities.json' assert {type: "json"}
-import replaceChars from './replaceChars.json' assert {type: "json"}
+import defaultProfanities from './profanities.json' assert { type: "json" }
+import replaceChars from './replaceChars.json' assert { type: "json" }
 
-function formatProfanity(profanity) {
+function profanityToRegex(profanity) {
     const regexFormatted = profanity.split('').reduce((word, letter) => {
         if (replaceChars[letter] === undefined) {
             return word+letter
@@ -17,49 +17,83 @@ class ProfanityDetector {
     #profanities = []
 
     constructor(profanities=defaultProfanities) {
-        this.#profanities = profanities.map(profanity => formatProfanity(profanity))
+        this.#profanities = profanities.reduce((object, profanity) => (object[profanity] = profanityToRegex(profanity), object), {})
     }
 
     get profanities() {
-        return this.#profanities
+        return Object.keys(this.#profanities)
     }
 
-    set profanities(profanities) {
-        this.#profanities = profanities.map(profanity => formatProfanity(profanity))
+    set profanities(profanities=[]) {
+        this.#profanities = profanities.reduce((object, profanity) => (object[profanity] = profanityToRegex(profanity), object), {})
     }
 
     addProfanity(profanity) {
-        this.#profanities.push(formatProfanity(profanity))
+        this.#profanities[profanity] = profanityToRegex(profanity)
         return profanity
     }
 
     removeProfanity(profanity) {
-        const profanitiesStrings = this.#profanities.map(profanity => String(profanity))
-        const formattedProfanity = String(formatProfanity(profanity))
-
-        const index = profanitiesStrings.indexOf(formattedProfanity)
-        if (index < 0) {
-            return null
+        if (Object.keys(this.#profanities).includes(profanity)) {
+            delete this.#profanities[profanity]
         }
-
-        this.#profanities.splice(index, 1)
-        return profanity
     }
 
-    extract(string) {
-        for (const regexp of this.#profanities) {
+    bounds(string) {
+        for (const regexp of Object.values(this.#profanities)) {
+            regexp.lastIndex = 0;
             const regexpResult = regexp.exec(string)
 
             if (regexpResult) {
-                return regexpResult[0]
+                return [regexpResult.index, regexpResult.index + regexpResult[0].length]
             }
         }
 
         return null
     }
 
+    // TODO: .boundsAll()
+
+    extract(string) {
+        const bounds = this.bounds(string)
+
+        if (bounds !== null) {
+            return string.slice(...bounds)
+        } else {
+            return null
+        }
+    }
+
+    extractAll(string) {
+        let extractedProfanities = []
+        let mutableString = string
+
+        while (1) {
+            const extractedProfanity = this.bounds(mutableString)
+            if (!extractedProfanity) return extractedProfanities
+            
+            extractedProfanities.push(mutableString.slice(...extractedProfanity))
+            mutableString = mutableString.slice(extractedProfanity[1])
+        }
+    }
+
     has(string) {
-        return this.extract(string) !== null
+        return Object.values(this.#profanities).some((profanity) => profanity.test(string))
+    }
+
+    censor(string, censorCharacter='*', includeFirstLetter=false, includeLastLetter=false) {
+        if (!this.has(string)) return string
+
+        let censoredString = string
+        const boundsStartOffset = includeFirstLetter ? 1 : 0
+        const boundsEndOffset = includeLastLetter ? 1 : 0
+
+        while (1) {
+            const profanityBounds = this.bounds(censoredString)
+            if (!profanityBounds) return censoredString
+
+            censoredString = censoredString.slice(0, profanityBounds[0] + boundsStartOffset) + censorCharacter.repeat(profanityBounds[1] - profanityBounds[0] - boundsStartOffset - boundsEndOffset) + censoredString.slice(profanityBounds[1] - boundsEndOffset)
+        }
     }
 }
 
