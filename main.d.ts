@@ -1,5 +1,3 @@
-export function profanityToRegex(profanity: string): RegExp;
-
 declare class ProfanityDetector {
     constructor(profanities?: Array<string>);
     
@@ -18,3 +16,5 @@ declare class ProfanityDetector {
 
     censor(string: string, censorCharacter?: string, includeFirstLetter?: boolean, includeLastLetter?: boolean): string;
 }
+
+export default ProfanityDetector
