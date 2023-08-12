@@ -1,4 +1,4 @@
-declare class ProfanityDetector {
+interface ProfanityDetector {
     constructor(profanities?: Array<string>);
     
     get profanities(): Array<string>;
