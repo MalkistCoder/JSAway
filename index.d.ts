@@ -1,4 +1,4 @@
-interface ProfanityDetector {
+export default ProfanityDetector {
     constructor(profanities?: Array<string>);
     
     get profanities(): Array<string>;
